@@ -1,66 +1,96 @@
-<!DOCTYPE html>
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
+<!DOCTYPE HTML>
 <html>
-    <head>
-        <!--
-        Customize this policy to fit your own app's needs. For more guidance, see:
-            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
-        Some notes:
-            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
-            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
-            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
-                * Enable inline JS: add 'unsafe-inline' to default-src
-        -->
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *">
-        <meta name="format-detection" content="telephone=no">
-        <meta name="msapplication-tap-highlight" content="no">
-        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
-         <!-- Required libraries for the chat -->
-        <script src="https://cdn.pubnub.com/pubnub.min.js"></script>
-        <script src="https://cdn.pubnub.com/pubnub-crypto.min.js"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
-        <script src="http://pubnub.github.io/pubnub-angular/lib/pubnub-angular.js"></script>
-        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
-        <title>Teste Angular Mobile Chat</title>
-    </head>
-    <body>
-        <div class="container" ng-app="PubNubAngularApp" ng-controller="ChatCtrl">
-            <br />
-            <h4>Online Users</h4>
-            <ul>
-                <li ng-repeat="user in users">{{user}}</li>
-            </ul>
-            <br />
-            <h4>Chat History ({{messages.length}})</h4>
-            <form ng-submit='publish()'>
-                <input type="text" ng-model='newMessage' />
-                <input type="submit" value="Send" />
-            </form>
-            <br />
-            <div class="well">
-                <ul>
-                    <li ng-repeat="message in messages">{{message}}</li>
-                </ul>
-            </div>
-        </div>
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/pubnubAngularApp.js"></script>
-    </body>
+<head>
+  <script src="https://cdn.pubnub.com/pubnub.min.js"></script>
+  <script src="https://cdn.pubnub.com/pubnub-crypto.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script src="http://pubnub.github.io/angular-js/scripts/pubnub-angular.js"></script>
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container" ng-app="PubNubAngularApp" ng-controller="ChatCtrl">
+
+<h4>Online Users</h4>
+<ul>
+  <li ng-repeat="user in users">{{user}}</li>
+</ul>
+
+<br />
+
+<h4>Chat History ({{messages.length}})</h4>
+
+<form ng-submit='publish()'>
+  <input type="text" ng-model='newMessage' />
+  <input type="submit" value="Send" />
+</form>
+
+<br />
+
+<div class="well">
+<ul>
+<li ng-repeat="message in messages">{{message}}</li>
+</ul>
+</div>
+
+</div>
+
+<script>
+//
+// Set Up Your Angular Module & Controller(s)
+//
+angular.module('PubNubAngularApp', ["pubnub.angular.service"])
+.controller('ChatCtrl', function($rootScope, $scope, $location, PubNub) {
+  // make up a user id (you probably already have this)
+  $scope.userId   = "User " + Math.round(Math.random() * 1000);
+  // make up a channel name
+  $scope.channel  = 'The Angular Channel';
+  // pre-populate any existing messages (just an AngularJS scope object)
+  $scope.messages = ['Welcome to ' + $scope.channel];
+  if (!$rootScope.initialized) {
+    // Initialize the PubNub service
+    PubNub.init({
+      subscribe_key: 'demo',
+      publish_key: 'demo',
+      uuid:$scope.userId
+    });
+    $rootScope.initialized = true;
+  }
+  // Subscribe to the Channel
+  PubNub.ngSubscribe({ channel: $scope.channel });
+  // Create a publish() function in the scope
+  $scope.publish = function() {
+    PubNub.ngPublish({
+      channel: $scope.channel,
+      message: "[" + $scope.userId + "] " + $scope.newMessage
+    });
+    $scope.newMessage = '';
+  };
+  // Register for message events
+  $rootScope.$on(PubNub.ngMsgEv($scope.channel), function(ngEvent, payload) {
+    $scope.$apply(function() {
+      $scope.messages.push(payload.message);
+    });
+  });
+  // Register for presence events (optional)
+  $rootScope.$on(PubNub.ngPrsEv($scope.channel), function(ngEvent, payload) {
+    $scope.$apply(function() {
+      $scope.users = PubNub.ngListPresence($scope.channel);
+    });
+  });
+  // Pre-Populate the user list (optional)
+  PubNub.ngHereNow({
+    channel: $scope.channel
+  });
+  
+  // Populate message history (optional)
+  PubNub.ngHistory({
+    channel: $scope.channel,
+    count: 500
+  });
+});
+</script>
+</body>
 </html>
+Status API Training Shop Blog About Pricing
+© 2015 GitHub, Inc. Terms Privacy Security Contact Help
