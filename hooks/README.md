@@ -64,6 +64,38 @@ The following hook types are supported:
     before_run/
     before_serve/
     pre_package/ <-- Windows 8 and Windows Phone only.
+    after_build/
+after_compile/
+after_docs/
+after_emulate/
+after_platform_add/
+after_platform_rm/
+after_platform_ls/
+after_plugin_add/
+after_plugin_ls/
+after_plugin_rm/
+after_plugin_search/
+after_plugin_install/   <-- Plugin hooks defined in plugin.xml are executed exclusively for a plugin being installed
+after_prepare/
+after_run/
+after_serve/
+before_build/
+before_compile/
+before_docs/
+before_emulate/
+before_platform_add/
+before_platform_rm/
+before_platform_ls/
+before_plugin_add/
+before_plugin_ls/
+before_plugin_rm/
+before_plugin_search/
+before_plugin_install/   <-- Plugin hooks defined in plugin.xml are executed exclusively for a plugin being installed
+before_plugin_uninstall/   <-- Plugin hooks defined in plugin.xml are executed exclusively for a plugin being uninstalled
+before_prepare/
+before_run/
+before_serve/
+pre_package/ <-- Windows 8 and Windows Phone only.
 
 ## Ways to define hooks
 ### Via '/hooks' directory
